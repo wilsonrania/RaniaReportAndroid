@@ -19,37 +19,29 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Java JDK 17
+      - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
-          accept-android-sdk-licenses: false
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
-      - name: Accept Android Licenses
-        shell: bash
+      - name: Check Project Files
         run: |
-          set +o pipefail
-          yes | sdkmanager --licenses || true
-
-      - name: Install Android SDK Packages
-        run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Check Gradle Wrapper
-        run: |
-          if [ ! -f "./gradlew" ]; then
-            echo "ERROR: gradlew file is missing"
-            exit 1
-          fi
-          chmod +x ./gradlew
+          ls -la
+          test -f settings.gradle || test -f settings.gradle.kts
+          test -f app/build.gradle || test -f app/build.gradle.kts
+          test -f gradlew
 
       - name: Build APK
         run: |
+          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
@@ -58,3 +50,4 @@ jobs:
           name: RaniaReport-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 30
